@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Juego de Tropas</title>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <br/>
+    <button id="lanzarSoldadoRojo">Lanzar Soldado Rojo</button>
+    <button id="lanzarCaballoRojo">Lanzar Caballo Rojo</button>
+    <button id="lanzarTanqueRojo">Lanzar Tanque Rojo</button>
+    <br/>
+    <p>Selecciona un camino:</p>
+    <select id="selectorCamino">
+        <option value="arriba">Arriba</option>
+        <option value="medio" selected>Medio</option>
+        <option value="abajo">Abajo</option>
+    </select>
+    <br/>
+    <button id="lanzarSoldadoAzul" >Lanzar Soldado Azul</button>
+    <button id="lanzarCaballoAzul">Lanzar Caballo Azul</button>
+    <button id="lanzarTanqueAzul">Lanzar Tanque Azul</button>
+    <script src="juego.js"></script>
+</body>
+<script>
+    // Ejemplo de cómo obtener el camino seleccionado y pasarlo a la función de lanzamiento
+    document.getElementById('lanzarSoldadoRojo').addEventListener('click', () => {
+        const caminoSeleccionado = document.getElementById('selectorCamino').value;
+        lanzarTropa('soldado', 'rojo', caminoSeleccionado);
+    });
+    document.getElementById('lanzarCaballoRojo').addEventListener('click', () => {
+        const caminoSeleccionado = document.getElementById('selectorCamino').value;
+        lanzarTropa('caballo', 'rojo', caminoSeleccionado);
+    });
+    document.getElementById('lanzarTanqueRojo').addEventListener('click', () => {
+        const caminoSeleccionado = document.getElementById('selectorCamino').value;
+        lanzarTropa('tanque', 'rojo', caminoSeleccionado);
+    });
+    document.getElementById('lanzarSoldadoAzul').addEventListener('click', () => {
+        const caminoSeleccionado = document.getElementById('selectorCamino').value;
+        lanzarTropa('soldado', 'azul', caminoSeleccionado);
+    });
+    document.getElementById('lanzarCaballoAzul').addEventListener('click', () => {
+        const caminoSeleccionado = document.getElementById('selectorCamino').value;
+        lanzarTropa('caballo', 'azul', caminoSeleccionado);
+    });
+    document.getElementById('lanzarTanqueAzul').addEventListener('click', () => {
+        const caminoSeleccionado = document.getElementById('selectorCamino').value;
+        lanzarTropa('tanque', 'azul', caminoSeleccionado);
+    });
+    // Repite para cada botón de lanzamiento de tropas...
+</script>
+</html>
