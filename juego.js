@@ -8,11 +8,15 @@ class Torre {
         this.color = color;
         this.vida = 100;
         this.vidaMaxima = vidaMaxima;
+        this.vidaMaximaLimite = 10000;
     }
 
     recibirDaño(daño) {
-        this.vida -= daño;
-        this.vida = Math.max(0, this.vida); // Asegúrate de que la vida no sea negativa
+        console.log('hola');
+        if(this.vida <= this.vidaMaxima){
+            this.vida -= daño;
+            this.vida = Math.max(0, this.vida); // Asegúrate de que la vida no sea negativa
+        }
     }
 
     dibujar() {
@@ -35,6 +39,29 @@ class Torre {
         ctx.fillStyle = 'green';
         const anchoVidaRestante = anchoBarraVida * (this.vida / this.vidaMaxima);
         ctx.fillRect(this.x, yBarraVida, anchoVidaRestante, alturaBarraVida);
+
+        // Dibuja el texto de la vida actual
+        ctx.fillStyle = 'black';
+        ctx.font = '14px Arial';
+        const textoVida = this.vida + '/' + this.vidaMaxima;
+
+        if (this.color === 'blue') {
+            // Alinea el texto a la izquierda para la torre azul
+            const textoX = this.x; // Comienza justo después de la barra de vida
+            ctx.fillText(textoVida, textoX, yBarraVida);
+        } else {
+            // Alinea el texto a la derecha para la torre roja
+            const textoX = this.x - anchoBarraVida + 30; // Termina justo antes de la torre
+            ctx.fillText(textoVida, textoX, yBarraVida);
+        }
+    }
+
+    incrementarVidaMaxima(incremento) {
+        if(this.vidaMaxima < this.vidaMaximaLimite){
+            this.vidaMaxima += incremento;
+            this.vidaMaxima = this.vidaMaxima < this.vidaMaximaLimite ? this.vidaMaxima : 10000;
+            this.vida = Math.min(this.vida + incremento, this.vidaMaxima); // Opcional: también incrementa la vida actual
+        }
     }
 }
 
@@ -67,10 +94,24 @@ class Tropa {
                 this.tamaño = 20;
                 this.daño = 20;
                 break;
+            case 'curador':
+                this.vida = 1; // Vida de la tropa curadora
+                this.velocidad = 0; // La tropa curadora no se moverá horizontalmente
+                this.tamaño = 10; // Tamaño de la tropa curadora
+                this.daño = -1; // Valor negativo para representar curación
+                this.tiempoVida = 0.50 * 1000; // Duración de 3 segundos (en milisegundos)
+                break;
             default:
                 this.vida = 1;
                 this.velocidad = 1;
                 this.tamaño = 10;
+        }
+
+        if (tipo === 'curador') {
+            this.movimientoVertical = 1; // Velocidad de movimiento vertical
+            this.direccionVertical = 1; // 1 para subir, -1 para bajar
+            this.limiteSuperior = 250; // Límite superior del movimiento vertical
+            this.limiteInferior = 550; // Límite inferior del movimiento vertical
         }
     }
 
@@ -82,6 +123,16 @@ class Tropa {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.tamaño, this.tamaño);
     }
+
+    moverVerticalmente() {
+        // Cambiar la dirección si se alcanza un límite
+        if (this.y <= this.limiteSuperior || this.y >= this.limiteInferior) {
+            this.direccionVertical *= -1;
+        }
+
+        // Mover la tropa
+        this.y += this.movimientoVertical * this.direccionVertical;
+    }
 }
 
 function lanzarTropa(tipo, equipo, camino) {
@@ -89,16 +140,49 @@ function lanzarTropa(tipo, equipo, camino) {
     let color = equipo === 'rojo' ? 'red' : 'blue';
     let velocidad = equipo === 'rojo' ? -1 : 1;
 
+    if (tipo === 'curador') {
+        const posiciones = ['arriba', 'medio', 'abajo'];
+        camino = posiciones[Math.floor(Math.random() * posiciones.length)];
+    }
+
     const nuevaTropa = new Tropa(xInicial, 0, color, tipo, camino);
     nuevaTropa.velocidad *= velocidad;
     tropas.push(nuevaTropa);
 }
+
+function incrementarVida(torreColor, incremento) {
+    if (torreColor === 'roja') {
+        torreRoja.incrementarVidaMaxima(incremento);
+    } else if (torreColor === 'azul') {
+        torreAzul.incrementarVidaMaxima(incremento);
+    }
+}
+
+function aplicarDañoPorcentual(torre, porcentaje) {
+    if(torre == 'roja'){
+        const daño = torreRoja.vidaMaxima * (porcentaje / 100);
+        console.log(daño);
+        torreRoja.recibirDaño(daño);
+    } else {
+        const daño = torreAzul.vidaMaxima * (porcentaje / 100);
+        console.log(daño);
+        torreAzul.recibirDaño(daño);
+    }
+}
+
+function activarPoder(torre, porcentaje) {
+    aplicarDañoPorcentual(torre, porcentaje);
+}
+
+
 
 let torreRoja = new Torre(750, 250, 'red', 100); // Vida máxima de 100
 let torreAzul = new Torre(0, 250, 'blue', 100); // Vida máxima de 100
 let tropas = [];
 let cuentaRegresiva = 30; // 30 segundos para la cuenta regresiva
 let juegoTerminado = false; // Estado del juego
+let victoriasRojo = 0;
+let victoriasAzul = 0;
 
 function colisionConTorre(tropa, torre) {
     if (tropa.color === 'red' && tropa.x - tropa.tamaño <= torre.x + 50) {
@@ -124,9 +208,24 @@ function mostrarMensajeVictoria(equipoGanador) {
     ctx.fillText('Equipo ' + equipoGanador + ' ganador', canvas.width / 2 - 200, canvas.height / 2);
 }
 
+function mostrarContadorVictorias() {
+    ctx.font = '24px Arial';
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'left';
+    ctx.fillText(victoriasAzul, 370, 30);
+    ctx.fillText('/', 385, 30);
+    ctx.fillText(victoriasRojo, 395, 30);
+}
+
 function finalizarJuego(equipoGanador) {
+    if (equipoGanador === 'Rojo') {
+        victoriasRojo++;
+    } else if (equipoGanador === 'Azul') {
+        victoriasAzul++;
+    }
     juegoTerminado = true;
     mostrarMensajeVictoria(equipoGanador);
+    mostrarContadorVictorias(); // Actualizar y mostrar el contador de victorias
     iniciarCuentaRegresiva();
 }
 
@@ -137,7 +236,7 @@ function iniciarCuentaRegresiva() {
         mostrarMensajeVictoria(juegoTerminado ? (torreRoja.vida <= 0 ? 'Azul' : 'Rojo') : '');
         ctx.font = '24px Arial';
         ctx.fillStyle = 'black';
-        ctx.fillText('Próximo juego en ' + cuentaRegresiva, canvas.width / 2 - 100, canvas.height / 2);
+        ctx.fillText('Próximo juego en ' + cuentaRegresiva, canvas.width / 2 - 100, canvas.height / 2 + 50);
         
         if (cuentaRegresiva > 0) {
             setTimeout(cuentaRegresivaTick, 1000);
@@ -162,6 +261,7 @@ function actualizarJuego() {
     if (juegoTerminado) return;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    mostrarContadorVictorias(); // Esto mantendrá el contador de victorias siempre visible
     
     test(50, 400, 10);
 
@@ -176,7 +276,20 @@ function actualizarJuego() {
 
     // Procesa el movimiento y la detección de colisiones
     for (let i = tropas.length - 1; i >= 0; i--) {
-        tropas[i].mover();
+        if (tropas[i].tipo === 'curador') {
+            tropas[i].moverVerticalmente();
+            // Curar la torre
+            if (tropas[i].tiempoVida > 0) {
+                (tropas[i].color === 'red' ? torreRoja : torreAzul).recibirDaño(tropas[i].daño);
+                tropas[i].tiempoVida -= 1000 / 60; // Restar el tiempo del frame (en milisegundos)
+            } else {
+                // Tiempo de vida terminado, eliminar la tropa
+                tropas.splice(i, 1);
+                continue;
+            }
+        } else {
+            tropas[i].mover();
+        }
         // Verifica la colisión con la torre enemiga
         if (colisionConTorre(tropas[i], tropas[i].color === 'red' ? torreAzul : torreRoja)) {
             // Elimina la tropa si colisiona con la torre enemiga
